@@ -28,6 +28,7 @@ def start_client():
     global data_flag
     global client_socket
     client_socket = socket(socket.AF_INET, socket.SOCK_GRAM)
+
     if len(sys.argv) != 6:
         raise ValueError('Input list format should be: Simple_ftp_client '
                          'client_host_name client_port# file_name N MSS')
