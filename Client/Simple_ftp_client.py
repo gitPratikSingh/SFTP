@@ -43,7 +43,7 @@ def start_client():
     go_back_N = int(go_back_N)
 
     buffer_list = list()
-    with open(file_name, "r") as file:
+    with open(file_name, "r") as file:  # with encapsulates common preparation and cleanup tasks
         while 1:
             MSS_string = file.read(int(MSS))
             if MSS_string != '':  # the end of a file is '' not false
@@ -54,7 +54,7 @@ def start_client():
         thread_first = threading.Thread(target=recv_ack, args=(condition,))
         thread_first.daemon = True
         thread_first.start()
-        thread_second = threading.Thread(target=rdt_send, args=(buffer_list,condition))
+        thread_second = threading.Thread(target=rdt_send, args=(buffer_list, condition))
         thread_second.daemon = True
         thread_second.start()
         # why no join for thread 1?
@@ -77,18 +77,15 @@ def recv_ack(condition):
             print("received ack_num: " + str(ack_num))
 
             if zeros == '0000000000000000' and ack_flag == ack_flag:
-                if last_ack_num is None:
-                    condition.acquire()
-                    last_ack_num = ack_num
-                    condition.notify()
-                    condition.release()
-                    print("Updated ack")
-                elif ack_num > last_ack_num:
-                    condition.acquire()
-                    last_ack_num = ack_num
-                    condition.notify()
-                    condition.release()
-                    print("Updated ack")
+                with condition: # automatically call acquire at beginning and release at the end of block
+                    if last_ack_num is None:
+                        last_ack_num = ack_num
+                        condition.notify()
+                        print("Updated ack")
+                    elif ack_num > last_ack_num:
+                        last_ack_num = ack_num
+                        condition.notify()
+                        print("Updated ack")
     except KeyboardInterrupt:
         sys.exit(0)
 
@@ -120,10 +117,9 @@ def rdt_send(buffer_list, condition):
         # add seq#
         # add checksum
         # add data_flag
-        condition.acquire()
-        before_ack_number = last_ack_num
-        print("Last ack val: "+str(last_ack_num))
-        condition.release()
+        with condition:
+            before_ack_number = last_ack_num
+            print("Last ack val: "+str(last_ack_num))
 
         if before_ack_number < max_ack:
             window = list()
@@ -145,12 +141,10 @@ def rdt_send(buffer_list, condition):
                # print(type(packet))
                 window.append(packet)
             sendWindow(window)
-
-            condition.acquire()
-            after_ack_number = last_ack_num
-            if after_ack_number == before_ack_number:
-                condition.wait(float(RTT))  # should wake up upon last_ack_num changes!
-            condition.release()
+            with condition:
+                after_ack_number = last_ack_num
+                if after_ack_number == before_ack_number:
+                    condition.wait(float(RTT))  # should wake up upon last_ack_num changes!
         else:   # why send packet w/ seq# > max_ack???
             # completed,send the end packet
             # last_packet_ack_number = before_ack_number
