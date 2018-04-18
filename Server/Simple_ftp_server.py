@@ -2,7 +2,6 @@ import argparse
 import socket
 import pickle
 import random
-import hashlib
 
 SERVER_PORT = None
 SERVER_FILE_NAME = None
@@ -42,18 +41,25 @@ def init():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_socket.bind((HOST_NAME, SERVER_PORT))
 
+    # empty the existing file
+    open(SERVER_FILE_NAME, 'w').close()
+
 
 def recvStream():
     global server_socket
-    msg, claddr = server_socket.recvfrom(65535)
+    msg, claddr = server_socket.recvfrom(65636)
     return msg, claddr
 
+def checksum(pkt):
+    return 0xfff
 
 def verifyChecksum(packet_checksum, packet_mss):
-    return hashlib.md5(packet_mss).hexdigest() == packet_checksum
+    val = checksum(packet_mss) == packet_checksum
+    print("Checksum: "+ str(val))
+    return val
 
 
-def sendackmessage(acknum, hostname):
+def sendackmessage(acknum, clientaddr):
     global CLIENT_PORT
     PADDING = "0000000000000000"
     ACK = "1010101010101010"
@@ -62,17 +68,16 @@ def sendackmessage(acknum, hostname):
     ack_packet = [acknum, PADDING, ACK]
     ack_packet = pickle.dumps(ack_packet)
 
-    ack_socket.sendto(ack_packet, (hostname, CLIENT_PORT))
+    ack_socket.sendto(ack_packet, clientaddr)
     ack_socket.close()
 
 
-def processdata(packet_mss, next_sequence_num, clientaddr):
+def processdata(packet_mss, ack_sequence_num, clientaddr):
     global SERVER_FILE_NAME
-    with open(SERVER_FILE_NAME, 'ab') as file:
+    with open(SERVER_FILE_NAME, 'a') as file:
         file.write(packet_mss)
 
-    acknum = next_sequence_num + 1
-    sendackmessage(acknum, clientaddr)
+    sendackmessage(ack_sequence_num, clientaddr)
 
 
 def start_server():
@@ -84,6 +89,7 @@ def start_server():
     END = "1111111111111111"
 
     init()
+
     while True:
         clientData, clientaddr = recvStream()
         clientData = pickle.loads(clientData)
@@ -91,7 +97,7 @@ def start_server():
         packet_header, packet_mss = clientData[0], clientData[1]
         packet_sequence_number, packet_checksum, packet_type = packet_header[0], packet_header[1], packet_header[2]
 
-        print(packet_sequence_number, packet_checksum, packet_type, packet_mss)
+        print("Received Packet" + str(packet_sequence_number))
 
         if type == END:
             print("Received File!")
@@ -107,11 +113,14 @@ def start_server():
                 print("Packet loss, sequence number =" + str(packet_sequence_number))
             else:
                 # process packet and send ack
-                processdata(packet_mss, next_sequence_num, clientaddr[0])
+                processdata(packet_mss, next_sequence_num, clientaddr)
                 next_sequence_num += 1
+        elif next_sequence_num > packet_sequence_number and verifyChecksum(packet_checksum,
+                                                                          packet_mss) and packet_type == DATA_TYPE:
+            sendackmessage(next_sequence_num, clientaddr)
         else:
             # discard packet
-            print("Packet dropped, sequence number =" + str(packet_sequence_number))
+            print("Packet dropped, sequence number =" + str(packet_sequence_number) + " Seqno desired" + str(next_sequence_num))
 
 
 if __name__ == "__main__":

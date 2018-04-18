@@ -14,3 +14,9 @@ transport layer services, including:
 • computing checksums, and
 
 • using the UDP socket interface.
+
+
+To run Client:
+    python Simple_ftp_client.py localhost 12345 data_file.txt 10 1500
+
+To run Server:
