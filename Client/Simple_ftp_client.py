@@ -162,7 +162,7 @@ def rdt_send(buffer_list):
             packet = list()
             header = list()
             header.append(lastpacketacknumber + 1)
-            header.append(checksum(buffer_list[lastpacketacknumber + 1]))
+            header.append(checksum(data_flag))
             header.append(data_flag)
             packet.append(header)
             packet.append(end_flag)
