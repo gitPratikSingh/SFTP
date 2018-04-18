@@ -146,24 +146,24 @@ def rdt_send(buffer_list, condition):
                 if after_ack_number == before_ack_number:
                     condition.wait(float(RTT))  # should wake up upon last_ack_num changes!
         else:   # why send packet w/ seq# > max_ack???
-            # completed,send the end packet
-            # last_packet_ack_number = before_ack_number
-            # # implement lock
-            # # send the next n packets
-            # packet = list()
-            # header = list()
-            # header.append(last_packet_ack_number + 1)
-            # header.append(checksum(data_flag))
-            # header.append(data_flag)
-            # packet.append(header)
-            # packet.append(end_flag)
-            #
-            # last_packet_ack_number += 1
-            # print("Sending end packet" + str(last_packet_ack_number))
-            # packet = pickle.dumps(packet)
-            #
-            # window.append(packet)
-            # sendWindow(window, client_socket, server_hostname, server_port)
+            #completed,send the end packet
+            last_packet_ack_number = before_ack_number
+            # implement lock
+            # send the next n packets
+            packet = list()
+            header = list()
+            header.append(last_packet_ack_number + 1)
+            header.append(checksum(data_flag))
+            header.append(data_flag)
+            packet.append(header)
+            packet.append(end_flag)
+
+            last_packet_ack_number += 1
+            print("Sending end packet" + str(last_packet_ack_number))
+            packet = pickle.dumps(packet)
+
+            window.append(packet)
+            sendWindow(window, client_socket, server_hostname, server_port)
             break
 
 
