@@ -57,9 +57,8 @@ def start_client():
         thread_second = threading.Thread(target=rdt_send, args=(buffer_list, condition))
         thread_second.daemon = True
         thread_second.start()
-        # why no join for thread 1?
         thread_second.join()
-        time.sleep(10)  # let main thread sleeps? instead of thread 2?
+        time.sleep(10)
     except KeyboardInterrupt:
         sys.exit(0)
 
@@ -77,7 +76,7 @@ def recv_ack(condition):
             print("received ack_num: " + str(ack_num))
 
             if zeros == '0000000000000000' and ack_flag == ack_flag:
-                with condition: # automatically call acquire at beginning and release at the end of block
+                with condition:  # automatically call acquire at beginning and release at the end of block
                     if last_ack_num is None:
                         last_ack_num = ack_num
                         condition.notify()
@@ -145,7 +144,7 @@ def rdt_send(buffer_list, condition):
                 after_ack_number = last_ack_num
                 if after_ack_number == before_ack_number:
                     condition.wait(float(RTT))  # should wake up upon last_ack_num changes!
-        else:   # why send packet w/ seq# > max_ack???
+        else:
             #completed,send the end packet
             last_packet_ack_number = before_ack_number
             # implement lock
@@ -154,7 +153,7 @@ def rdt_send(buffer_list, condition):
             header = list()
             header.append(last_packet_ack_number + 1)
             header.append(checksum(data_flag))
-            header.append(data_flag)
+            header.append(end_flag)
             packet.append(header)
             packet.append(end_flag)
 

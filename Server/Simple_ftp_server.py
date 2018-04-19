@@ -64,8 +64,8 @@ def sendackmessage(acknum, clientaddr):
     PADDING = "0000000000000000"
     ACK = "1010101010101010"
 
-    ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)   #why need another socket?
-    ack_packet = [acknum, PADDING, ACK]  # why padding?
+    ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    ack_packet = [acknum, PADDING, ACK]
     ack_packet = pickle.dumps(ack_packet)
 
     ack_socket.sendto(ack_packet, clientaddr)
@@ -99,7 +99,7 @@ def start_server():
 
         print("Received Packet" + str(packet_sequence_number))
 
-        if type == END:  # type variable hasn't initialized yet?
+        if packet_type == END:
             print("Received File!")
             print("Closing Socket")
             server_socket.close()
