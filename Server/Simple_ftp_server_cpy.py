@@ -2,8 +2,6 @@ import argparse
 import socket
 import pickle
 import random
-import socket
-
 
 SERVER_PORT = None
 SERVER_FILE_NAME = None
@@ -36,7 +34,7 @@ def init():
     SERVER_PORT = args.p
     SERVER_FILE_NAME = args.f
     PROBABILITY_LOSS = args.l
-    HOST_NAME = socket.gethostbyname(socket.gethostname())
+    HOST_NAME = 'ec2-13-59-73-78.us-east-2.compute.amazonaws.com'
     CLIENT_PORT = args.cp
 
     next_sequence_num = 0
