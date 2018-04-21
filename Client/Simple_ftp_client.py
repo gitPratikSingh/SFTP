@@ -19,7 +19,7 @@ client_socket = None
 server_hostname = '152.46.19.25'
 server_port = 7735
 lock = None
-
+localtime =  None
 
 def start_client():
     global client_name
@@ -30,6 +30,9 @@ def start_client():
     global data_flag
     global client_socket
     global lock
+    global localtime
+    localtime = time.time()
+
     condition = threading.Condition()
     lock = Lock()
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # no need to bind to a port, it's in the packet
@@ -108,6 +111,8 @@ def rdt_send(buffer_list, condition):
     global server_port
     global client_socket
     global lock
+    global localtime
+
     RTT = 0.2
     max_ack = len(buffer_list) - 1
 
@@ -164,6 +169,10 @@ def rdt_send(buffer_list, condition):
 
             window.append(packet)
             sendWindow(window)
+
+            finaltime = time.time()
+
+            print("Time Passed: "+ str(finaltime - localtime))
             break;
 
 

@@ -17,6 +17,6 @@ transport layer services, including:
 
 
 To run Client:
-    python Simple_ftp_client.py localhost 12345 data_file.txt 10 1500
+    python3 Simple_ftp_client.py localhost 12345 data_file.txt 10 1500
 
 To run Server:
