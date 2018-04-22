@@ -100,7 +100,7 @@ def start_server():
         packet_header, packet_mss = clientData[0], clientData[1]
         packet_sequence_number, packet_checksum, packet_type = packet_header[0], packet_header[1], packet_header[2]
 
-        print("Received Packet" + str(packet_sequence_number))
+        print("Received Packet" + str(packet_sequence_number) + "," + str(packet_checksum) + "," + str(packet_type))
 
         if packet_type == END:
             print("Received File!")
