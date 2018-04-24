@@ -36,7 +36,8 @@ def init():
     SERVER_PORT = args.p
     SERVER_FILE_NAME = args.f
     PROBABILITY_LOSS = args.l
-    HOST_NAME = socket.gethostbyname(socket.gethostname())
+    HOST_NAME = 'localhost'
+        #socket.gethostbyname(socket.gethostname())
     CLIENT_PORT = args.cp
 
     next_sequence_num = 0

@@ -57,7 +57,7 @@ def start_client():
     client_port = int(client_port)
     go_back_N = int(go_back_N)
     client_socket.bind(('0.0.0.0', client_port))
-    with send_quota_lock:
+    with send_quota_lock:  ##
         send_quota = go_back_N
     buffer_list = list()
     with open(file_name, "r") as file:  # with encapsulates common preparation and cleanup tasks
@@ -67,7 +67,7 @@ def start_client():
                 buffer_list.append(MSS_string)
             else:
                 break
-    if len(buffer_list) < 2*go_back_N:
+    if len(buffer_list) < 2*go_back_N:  ##
         raise ValueError('sequence number must be larger than two times the window size'
                          ', please decrease either segment size or window size ')
     try:
@@ -84,6 +84,7 @@ def start_client():
 
 def recv():
     global ack_flag
+    global nak_flag
     global client_socket
     global send_quota
     global send_quota_lock
@@ -96,7 +97,7 @@ def recv():
             k_byte, addr = client_socket.recvfrom(1024)
             k_num, zeros, flag = pickle.loads(k_byte)
             # print("received ack_num: " + str(ack_num))
-            if zeros == '0000000000000000' and flag == nak_flag:
+            if zeros == '0000000000000000' and flag == nak_flag:  ## buffer the unacked pkts
                 with pending_list_lock:
                     for pending_pkt in pending_pkt_list:
                         if pending_pkt.pkt_num == k_num:
@@ -111,7 +112,7 @@ def recv():
                         last_ack_num = k_num
                 with pending_list_lock:
                     for pending_pkt in pending_pkt_list:
-                        if pending_pkt.pkt_num == k_num:
+                        if pending_pkt.pkt_num <= k_num:
                             pending_pkt.status = 1
                             with pending_pkt.condition:
                                 pending_pkt.condition.notify()
@@ -127,12 +128,13 @@ def sendWindow(window):
     global client_socket
     global server_hostname
     global server_port
+    print(window)
     for win in window:
         #print(server_hostname)
         client_socket.sendto(win, (server_hostname, server_port))
 
 
-def rdt_send(buffer_list, window_condition_list):
+def rdt_send(buffer_list):
     global go_back_N
     global data_flag
     global server_hostname
@@ -175,7 +177,7 @@ def rdt_send(buffer_list, window_condition_list):
                 pending_pkt = PendingPkt(packet, last_packet_ack_number, threading.Condition(), 0)
                 with pending_list_lock:
                     pending_pkt_list.append(pending_pkt)
-                thread_pending = thread.Threading(target=pkt_timer, args=pending_pkt)
+                thread_pending = threading.Thread(target=pkt_timer, args=(pending_pkt,))
                 thread_pending.daemon = True
                 thread_pending.start()
                 with send_quota_lock:
@@ -208,7 +210,7 @@ def rdt_send(buffer_list, window_condition_list):
 def pkt_timer(pending_pkt):
     global pending_pkt_list
     timer = 0.2
-    
+
     while 1:
         with pending_pkt.condition:
             pending_pkt.condition.wait(timer)

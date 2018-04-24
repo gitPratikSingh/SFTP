@@ -10,9 +10,15 @@ SERVER_FILE_NAME = None
 PROBABILITY_LOSS = None
 HOST_NAME = None
 CLIENT_PORT = None
-
+buffer = list()
 next_sequence_num = None
 server_socket = None
+seq_lack_list = list()
+
+class BufferData:
+    def __init__(self, packet_mss='None', packet_sequence_num=-1):
+        self.packet_mss = packet_mss
+        self.packet_sequence_num = packet_sequence_num
 
 
 def init():
@@ -36,7 +42,8 @@ def init():
     SERVER_PORT = args.p
     SERVER_FILE_NAME = args.f
     PROBABILITY_LOSS = args.l
-    HOST_NAME = socket.gethostbyname(socket.gethostname())
+    HOST_NAME = 'localhost'
+        #socket.gethostbyname(socket.gethostname())
     CLIENT_PORT = args.cp
 
     next_sequence_num = 0
@@ -65,7 +72,6 @@ def sendackmessage(acknum, clientaddr):
     global CLIENT_PORT
     PADDING = "0000000000000000"
     ACK = "1010101010101010"
-
     ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     ack_packet = [acknum, PADDING, ACK]
     ack_packet = pickle.dumps(ack_packet)
@@ -74,6 +80,18 @@ def sendackmessage(acknum, clientaddr):
     ack_socket.sendto(ack_packet, clientaddr)
     ack_socket.close()
 
+
+def sendNakMessage(naknum, clientaddr):
+    global CLIENT_PORT
+    NAK = '1111111100000000'
+    PADDING = "0000000000000000"
+    nak_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    nak_packet = [naknum, PADDING, NAK]
+    nak_packet = pickle.dumps(nak_packet)
+
+    print("Send Nak:" + str(naknum))
+    nak_socket.sendto(nak_packet, clientaddr)
+    nak_socket.close()
 
 def processdata(packet_mss, ack_sequence_num, clientaddr):
     global SERVER_FILE_NAME
@@ -87,7 +105,8 @@ def start_server():
     global PROBABILITY_LOSS
     global next_sequence_num
     global server_socket
-
+    global buffer
+    buffered = False
     DATA_TYPE = "0101010101010101"
     END = "1111111111111111"
 
@@ -114,14 +133,30 @@ def start_server():
             if PROBABILITY_LOSS >= random.uniform(0, 1):
                 print("Packet loss, sequence number =" + str(packet_sequence_number))
             else:
-                # process packet and send ack
-                processdata(packet_mss, next_sequence_num, clientaddr)
-                next_sequence_num += 1
+                if buffered:
+                    buffer.append(BufferData(packet_mss, packet_sequence_num))
+                    buffer.sort(key=lambda x: x.packet_sequence_num)
+                    buffered = False
+                    for i in range(1, len(buffer)):
+                        if (buffer[i].packet_num - buffer[i-1].packet_num) != 1:
+                            next_sequence_num = buffer[i-1].packet_num + 1
+                            buffered = True
+                            break
+                    if not buffered:
+                        for data in buffer:
+                            processdata(data.packet_mss, data.packet_num, clientaddr)
+                        next_sequence_num = buffer[-1].packet_num + 1
+                else:
+                    processdata(packet_mss, next_sequence_num, clientaddr)
+                    next_sequence_num += 1
                 #print("next_sequence_num" + str(next_sequence_num))
-
         else:
-            # discard packet
-            print("Packet dropped, sequence number =" + str(packet_sequence_number))
+            # send nak for the seq. num we want
+            sendNakMessage(next_sequence_num, clientaddr)
+            # buffering the out-of-order data
+            buffer.append(BufferData(packet_mss, packet_sequence_num))
+            buffered = True
+            #print("Packet dropped, sequence number =" + str(packet_sequence_number))
 
 
 if __name__ == "__main__":
