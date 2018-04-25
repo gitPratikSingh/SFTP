@@ -21,3 +21,4 @@ To run Client:
     python3 Simple_ftp_client_SR.py localhost 12345 data_file.txt 10 1500
 
 To run Server:
+    python3 Simple_ftp_server.py
