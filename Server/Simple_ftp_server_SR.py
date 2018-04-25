@@ -18,7 +18,7 @@ seq_lack_list = list()
 class BufferData:
     def __init__(self, packet_mss='None', packet_sequence_num=-1):
         self.packet_mss = packet_mss
-        self.packet_sequence_num = packet_sequence_num
+        self.packet_sequence_number = packet_sequence_num
 
 
 def init():
@@ -134,18 +134,18 @@ def start_server():
                 print("Packet loss, sequence number =" + str(packet_sequence_number))
             else:
                 if buffered:
-                    buffer.append(BufferData(packet_mss, packet_sequence_num))
-                    buffer.sort(key=lambda x: x.packet_sequence_num)
+                    buffer.append(BufferData(packet_mss, packet_sequence_number))
+                    buffer.sort(key=lambda x: x.packet_sequence_number)
                     buffered = False
                     for i in range(1, len(buffer)):
-                        if (buffer[i].packet_num - buffer[i-1].packet_num) != 1:
-                            next_sequence_num = buffer[i-1].packet_num + 1
+                        if (buffer[i].packet_sequence_number - buffer[i-1].packet_sequence_number) != 1:
+                            next_sequence_num = buffer[i-1].packet_sequence_number + 1
                             buffered = True
                             break
                     if not buffered:
                         for data in buffer:
-                            processdata(data.packet_mss, data.packet_num, clientaddr)
-                        next_sequence_num = buffer[-1].packet_num + 1
+                            processdata(data.packet_mss, data.packet_sequence_number, clientaddr)
+                        next_sequence_num = buffer[-1].packet_sequence_number + 1
                 else:
                     processdata(packet_mss, next_sequence_num, clientaddr)
                     next_sequence_num += 1
@@ -154,7 +154,7 @@ def start_server():
             # send nak for the seq. num we want
             sendNakMessage(next_sequence_num, clientaddr)
             # buffering the out-of-order data
-            buffer.append(BufferData(packet_mss, packet_sequence_num))
+            buffer.append(BufferData(packet_mss, packet_sequence_number))
             buffered = True
             #print("Packet dropped, sequence number =" + str(packet_sequence_number))
 

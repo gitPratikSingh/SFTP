@@ -130,7 +130,10 @@ def sendWindow(window):
     global server_port
     for win in window:
         #print(server_hostname)
-        print(win)
+        #print(win)
+        if type(win) is int:
+            return
+
         client_socket.sendto(win, (server_hostname, server_port))
 
 
@@ -217,7 +220,7 @@ def pkt_timer(pending_pkt):
             if pending_pkt.status == 0 or pending_pkt.status == 2:
                 sendWindow(pending_pkt.packet)
             elif pending_pkt.status == 1:
-                for i in range(len(pending_pkt_list)):
+                for i in range(len(pending_pkt_list)-1):
                     if pending_pkt_list[i] == pending_pkt:
                         pending_pkt_list.pop(i)
                 break
