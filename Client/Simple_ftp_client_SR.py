@@ -18,7 +18,7 @@ end_flag = "1111111111111111"
 last_ack_num = -1
 last_ack_lock = Lock()
 client_socket = None
-server_hostname = '152.46.19.25'
+server_hostname = 'localhost'
 server_port = 7735
 localtime = None
 send_quota = None
@@ -128,9 +128,9 @@ def sendWindow(window):
     global client_socket
     global server_hostname
     global server_port
-    print(window)
     for win in window:
         #print(server_hostname)
+        print(win)
         client_socket.sendto(win, (server_hostname, server_port))
 
 
@@ -217,7 +217,7 @@ def pkt_timer(pending_pkt):
             if pending_pkt.status == 0 or pending_pkt.status == 2:
                 sendWindow(pending_pkt.packet)
             elif pending_pkt.status == 1:
-                for i in range(pending_pkt_list):
+                for i in range(len(pending_pkt_list)):
                     if pending_pkt_list[i] == pending_pkt:
                         pending_pkt_list.pop(i)
                 break
